@@ -206,9 +206,6 @@ static int ping_init_sock(struct sock *sk)
 	struct group_info *group_info = get_current_groups();
 	int i, j, count = group_info->ngroups;
 
-	if (sk->sk_family == AF_INET6)
-		inet6_sk(sk)->ipv6only = 1;
-
 	inet_get_ping_group_range_net(net, range, range+1);
 	if (range[0] <= group && group <= range[1])
 		return 0;
@@ -252,11 +249,6 @@ static int ping_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 
 	if (addr_len < sizeof(struct sockaddr_in))
 		return -EINVAL;
-
-		if (addr->sin_family != AF_INET &&
-		    !(addr->sin_family == AF_UNSPEC &&
-		      addr->sin_addr.s_addr == htonl(INADDR_ANY)))
-			return -EAFNOSUPPORT;
 
 	pr_debug("ping_v4_bind(sk=%p,sa_addr=%08x,sa_port=%d)\n",
 		 sk, addr->sin_addr.s_addr, ntohs(addr->sin_port));
@@ -496,10 +488,6 @@ static int ping_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	if (!ping_supported(user_icmph.type, user_icmph.code))
 		return -EINVAL;
 
-		if (addr->sin6_family != AF_INET6)
-			return -EAFNOSUPPORT;
-
-
 	/*
 	 *	Get and verify the address.
 	 */
@@ -509,7 +497,7 @@ static int ping_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		if (msg->msg_namelen < sizeof(*usin))
 			return -EINVAL;
 		if (usin->sin_family != AF_INET)
-			return -EAFNOSUPPORT;
+			return -EINVAL;
 		daddr = usin->sin_addr.s_addr;
 		/* no remote port */
 	} else {
